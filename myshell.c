@@ -3,17 +3,17 @@
  *
  *************************************************************************************/
 
-#include <stdio.h>
+#include <stdlib.h>
+// #include <stdio.h>
 #include "shellfuncts.h"
 
 int main(int argv, const char *argc[]) {
-//	(void) argv; // Make compile warnings go away - be sure to delete this line if you use the param
+	(void) argv; // Make compile warnings go away - be sure to delete this line if you use the param
 	(void) argc; // Make compile warnings go away - be sure to delete this line if you use the param
 
-	// If they just ran myshell, say Hello World--if they included a parameter, speak Australian
-	if (argv == 1)
-		hello(1);
-	else
-		hello(0);
+	// run the shell
+	my_shell();
 
+
+	return EXIT_SUCCESS;
 }

@@ -3,41 +3,79 @@
  *
  *************************************************************************************/
 
+#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "shellfuncts.h"
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * my_shell - process loop for my shell
  *
- *		Params:	param1 - I explain my parameters, like this is 1 for American, 2 for
- *                      Australian
- *
- *		Returns: always returns 1, no matter what. Fairly useless.
  *
  *************************************************************************************/
 
-int hello(int param1) {
-	// I'm commenting to explain that this checks param and changes the message
-	if (param1 == 1)
-		send_msg("Hello world!\n");
-	else
-		send_msg("G'day world!\n");
+void my_shell() {
+	char *line; 
+	char **args;
+	int status;
 
-	// Return 1 because, why not.
-	return 1;
+	// Always display this message when the shell is opened, then block for input
+	char welcome[] = "Hello there! Welcome to my shell";
+	printf("%s", welcome);
+	do {
+		printf("# ");
+		
+		line = get_line();
+		args = parse_line();
+		status = execute(args);
+
+	}
+	while (status);
+
 }
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * get_line - get single line inut for shell
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
  *
  *************************************************************************************/
 
-void send_msg(const char *param2) {
-	printf("%s", param2);
+char *get_line() {
+	char *line = NULL;
+	size_t bufsize = 0; // let getline() allocate the buffer
+	ssize_t num_chars;
+
+	num_chars = getline(&line, &bufsize, stdin);
+
+	if (num_chars == -1) {
+		if (feof(stdin)) {
+			exit(EXIT_SUCCESS);
+		} else {
+			perror("Error reading stdin");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return line;
 }
 
+#define TOK_BUFSIZE 64
+#define DELIMS " \t\r\n\a"
+char **parse_line(char *line) {
+
+	int bufsize = TOK_BUFSIZE, position = 0;
+	char **tokens = malloc(sizeof(char*) * bufsize);
+	char *token;
+
+	if (!tokens) { // error allocating memory
+		fprintf(stderr, "Error allocating memory for token array");
+		exit(EXIT_FAILURE);
+	}
+
+	token = strtok(line, DELIMS);
+}
+
+int execute(char **args) {
+	(void) args;
+	return 0;
+}
