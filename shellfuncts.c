@@ -16,8 +16,6 @@
 
 /*************************************************************************************
  * my_shell - process loop for my shell
- *
- *
  *************************************************************************************/
 
 void my_shell() {
@@ -36,6 +34,18 @@ void my_shell() {
 		
 		line = get_line();
 		args = get_args(line);
+
+		char *bg = NULL;
+		int argc = 0;
+		while (args[argc] != NULL) {
+			argc++;
+		}
+		if (argc > 0) {
+			if (strcmp(args[argc-1], "&") == 0) {
+				bg = args[argc-1];
+				args[argc-1] = NULL;
+			}
+		}
 		
 		char *valid_commands[] = {"create", "update", "list", "dir", "halt"};
 	
@@ -46,7 +56,9 @@ void my_shell() {
 						childid = fork();
 						if (childid != 0) {
 							printf("Child PID: %d\n", childid);
-							waitpid(childid, &pstatus, childid);
+							if (bg == NULL) {
+								waitpid(childid, &pstatus, 0);
+							}
 							status = 1;
 						} else {
 							status = create(args);
@@ -56,7 +68,9 @@ void my_shell() {
 					childid = fork();
 						if (childid != 0) {
 							printf("Child PID: %d\n", childid);
-							waitpid(childid, &pstatus, childid);
+							if (bg == NULL) {
+								waitpid(childid, &pstatus, 0);
+							}
 							status = 1;
 						} else {
 							status = update(args); 
@@ -66,7 +80,9 @@ void my_shell() {
 					childid = fork();
 						if (childid != 0) {
 							printf("Child PID: %d\n", childid);
-							waitpid(childid, &pstatus, childid);
+							if (bg == NULL) {
+								waitpid(childid, &pstatus, 0);
+							}
 							status = 1;
 						} else {
 							status = list(args); 
@@ -76,7 +92,9 @@ void my_shell() {
 						childid = fork();
 						if (childid != 0) {
 							printf("Child PID: %d\n", childid);
-							waitpid(childid, &pstatus, childid);
+							if (bg == NULL) {
+								waitpid(childid, &pstatus, 0);
+							}
 							status = 1;
 						} else {
 							status = dir();
@@ -85,6 +103,9 @@ void my_shell() {
 					case 4: //halt
 						status = halt(); 
 						break;
+					default:
+						fprintf(stderr, "Error: Invalid command '%s'\n", args[0]);
+						status = 1;
 				}
 			}
 		}
@@ -94,8 +115,7 @@ void my_shell() {
 
 /*************************************************************************************
  * get_line - get single line inut for shell
- *
- *
+ * returns: a dynamically allocated string containing the input line
  *************************************************************************************/
 
 char *get_line() {
@@ -119,6 +139,12 @@ char *get_line() {
 
 #define TOK_BUFSIZE 64
 #define DELIMS " \t\r\n\a"
+/*************************************************************************************
+ * get_args: parse line into arguments, space delimited
+ * params: line - the input line to parse
+ * returns: an array of strings (tokens) representing the arguments
+ *************************************************************************************/
+
 char **get_args(char *line) {
 
 	int bufsize = TOK_BUFSIZE, position = 0;
@@ -190,10 +216,16 @@ char **get_args(char *line) {
 	return tokens;
 }
 
+/*************************************************************************************
+ * create: creates a file in the current directory
+ * params: args - an array of strings representing arguments, where args[1] is the filename
+ * returns: 0 on success, -1 on failure
+ *************************************************************************************/
+
 int create(char **args) {
 	if (args[1] == NULL) {
 		fprintf(stderr, "Error: No filename provided for create command\n");
-		return 0;
+		return -1;
 	}
 
 	FILE *fptr;
@@ -202,29 +234,36 @@ int create(char **args) {
 	if (fptr != NULL) {
 		fprintf(stderr, "Error: File '%s' already exists\n", args[1]);
 		fclose(fptr);
-		return 0;
+		return -1;
 	}
 	fptr = fopen(args[1], "w");
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not create file '%s': %s\n", args[1], strerror(errno));
-		return 0;
+		return -1;
 	}
 
 	fclose(fptr);
 	return 0;
 }
 
+/*************************************************************************************
+ * update: appends a specified number of lines to a file
+ * params: args - an array of strings where args[1] is the filename, args[2] is the number of lines to write,
+ *               and args[3] is the content to write
+ * returns: 0 on success, -1 on failure
+ *************************************************************************************/
+
 int update(char **args) {
 	if (args[1] == NULL || args[2] == NULL || args[3] == NULL) {
 		fprintf(stderr, "Error: Insufficient arguments for update command\n");
-		return 0;
+		return -1;
 	}
 
 	FILE *fptr = fopen(args[1], "a");
 
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not open file '%s' for updating: %s\n", args[1], strerror(errno));
-		return 0;
+		return -1;
 	}
 
 	int write_counter = atoi(args[2]);
@@ -233,32 +272,38 @@ int update(char **args) {
 	if (write_counter <= 0) {
 		fprintf(stderr, "Error: Invalid write count '%s'\n", args[2]);
 		fclose(fptr);
-		return 0;
+		return -1;
 	}
 
 	for (int writes = 0; writes < write_counter; writes++) {
 		if (fprintf(fptr, "%s\n", args[3]) < 0) {
 			fprintf(stderr, "Error: Could not write to file '%s': %s\n", args[1], strerror(errno));
-			return 0;
+			return -1;
 		}
 		sleep(strlen(args[3])/5);
 	}
 	fflush(fptr);
 	fclose(fptr);
-	printf("Updated %s. PID: %d\n", args[1], pid);
+	fprintf(stdout, "\nUpdated %s. PID: %d\n", args[1], pid);
+	fflush(stdout); // Ensure the output is printed immediately
 	return 0;
 }
 
+/*************************************************************************************
+ * list: reads and prints the contents of a file line by line
+ * params: args - an array of strings where args[1] is the filename to read
+ * returns: 0 on success, -1 on failure
+ *************************************************************************************/
 int list(char **args) {
 	if (args[1] == NULL) {
 		fprintf(stderr, "Error: No file provided for list command\n");
-		return 0;
+		return -1;
 	}
 
 	FILE *fptr = fopen(args[1], "r");
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not open file '%s' for listing: %s", args[1], strerror(errno));
-		return 0;
+		return -1;
 	}
 
 	char *line = NULL;
@@ -274,7 +319,7 @@ int list(char **args) {
 				fprintf(stderr, "Error reading file '%s': %s\n", args[1], strerror(errno));
 				free(line);
 				fclose(fptr);
-				return 0;
+				return -1;
 			}
 		}
 		printf("%s", line); // Print the line read from the file
@@ -283,14 +328,23 @@ int list(char **args) {
 	return 0;
 }
 
+/*************************************************************************************
+ * dir: lists the contents of the current directory
+ * returns: 0 on success, -1 on failure
+ *************************************************************************************/
+
 int dir() {
-	
 	if( execl("/bin/ls", "ls", NULL) == -1) {
 		fprintf(stderr, "Error getting directory contents: %s\n", strerror(errno));
-		return 0;
+		return -1;
 	};
 	return 0;
 }
+
+/*************************************************************************************
+ * halt: exits the shell
+ * returns: 0 to indicate the shell should exit
+ *************************************************************************************/
 
 int halt() {
 	return 0; // Return 0 to indicate the shell should exit
