@@ -6,7 +6,6 @@
 void my_shell();
 char *get_line();
 char **get_args(char *line);
-int execute(char **args);
 
 int create(char **args);
 int update(char **args);
