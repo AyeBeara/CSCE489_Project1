@@ -58,22 +58,26 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
+							} else {
+								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
-							status = create(args);
+							create(args);
 						}
 						break;
 					case 1: // update
-					childid = fork();
+						childid = fork();
 						if (childid != 0) {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
+							} else {
+								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
-							status = update(args); 
+							update(args); 
 						}
 						break;
 					case 2: // list
@@ -82,10 +86,12 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
+							} else {
+								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
-							status = list(args); 
+							list(args); 
 						}
 						break;
 					case 3: //dir
@@ -94,14 +100,16 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
+							} else {
+								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
-							status = dir();
+							dir();
 						}
 						break;
 					case 4: //halt
-						status = halt(); 
+						exit(EXIT_SUCCESS); 
 						break;
 					default:
 						fprintf(stderr, "Error: Invalid command '%s'\n", args[0]);
@@ -160,7 +168,14 @@ char **get_args(char *line) {
 	while (token != NULL) {
 
 		// Handle quoted strings
-		if (token[0] == '\"' || token[0] == '\'') {
+		if (token[0] == '\"') {
+			if (token[strlen(token) - 1] == '\"') {
+				token++;
+				token[strlen(token) - 1] = '\0';
+				tokens[position] = token;
+				position++;
+				break;
+			}
 			char *quoted_string = malloc(256); // allocate buffer for quoted string
 			if (!quoted_string) {
 				fprintf(stderr, "Error allocating memory for quoted string");
@@ -222,10 +237,10 @@ char **get_args(char *line) {
  * returns: 0 on success, -1 on failure
  *************************************************************************************/
 
-int create(char **args) {
+void create(char **args) {
 	if (args[1] == NULL) {
 		fprintf(stderr, "Error: No filename provided for create command\n");
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	FILE *fptr;
@@ -234,16 +249,16 @@ int create(char **args) {
 	if (fptr != NULL) {
 		fprintf(stderr, "Error: File '%s' already exists\n", args[1]);
 		fclose(fptr);
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 	fptr = fopen(args[1], "w");
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not create file '%s': %s\n", args[1], strerror(errno));
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	fclose(fptr);
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 
 /*************************************************************************************
@@ -253,17 +268,17 @@ int create(char **args) {
  * returns: 0 on success, -1 on failure
  *************************************************************************************/
 
-int update(char **args) {
+void update(char **args) {
 	if (args[1] == NULL || args[2] == NULL || args[3] == NULL) {
 		fprintf(stderr, "Error: Insufficient arguments for update command\n");
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	FILE *fptr = fopen(args[1], "a");
 
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not open file '%s' for updating: %s\n", args[1], strerror(errno));
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	int write_counter = atoi(args[2]);
@@ -272,13 +287,13 @@ int update(char **args) {
 	if (write_counter <= 0) {
 		fprintf(stderr, "Error: Invalid write count '%s'\n", args[2]);
 		fclose(fptr);
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	for (int writes = 0; writes < write_counter; writes++) {
 		if (fprintf(fptr, "%s\n", args[3]) < 0) {
 			fprintf(stderr, "Error: Could not write to file '%s': %s\n", args[1], strerror(errno));
-			return -1;
+			exit(EXIT_FAILURE);
 		}
 		sleep(strlen(args[3])/5);
 	}
@@ -286,7 +301,7 @@ int update(char **args) {
 	fclose(fptr);
 	fprintf(stdout, "\nUpdated %s. PID: %d\n", args[1], pid);
 	fflush(stdout); // Ensure the output is printed immediately
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 
 /*************************************************************************************
@@ -294,16 +309,16 @@ int update(char **args) {
  * params: args - an array of strings where args[1] is the filename to read
  * returns: 0 on success, -1 on failure
  *************************************************************************************/
-int list(char **args) {
+void list(char **args) {
 	if (args[1] == NULL) {
 		fprintf(stderr, "Error: No file provided for list command\n");
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	FILE *fptr = fopen(args[1], "r");
 	if (fptr == NULL) {
 		fprintf(stderr, "Error: Could not open file '%s' for listing: %s", args[1], strerror(errno));
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	char *line = NULL;
@@ -319,13 +334,13 @@ int list(char **args) {
 				fprintf(stderr, "Error reading file '%s': %s\n", args[1], strerror(errno));
 				free(line);
 				fclose(fptr);
-				return -1;
+				exit(EXIT_FAILURE);
 			}
 		}
 		printf("%s", line); // Print the line read from the file
 	}
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 
 /*************************************************************************************
@@ -333,19 +348,10 @@ int list(char **args) {
  * returns: 0 on success, -1 on failure
  *************************************************************************************/
 
-int dir() {
+void dir() {
 	if( execl("/bin/ls", "ls", NULL) == -1) {
 		fprintf(stderr, "Error getting directory contents: %s\n", strerror(errno));
-		return -1;
+		exit(EXIT_FAILURE);
 	};
-	return 0;
-}
-
-/*************************************************************************************
- * halt: exits the shell
- * returns: 0 to indicate the shell should exit
- *************************************************************************************/
-
-int halt() {
-	return 0; // Return 0 to indicate the shell should exit
+	exit(EXIT_SUCCESS);
 }
