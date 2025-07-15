@@ -58,8 +58,6 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
-							} else {
-								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
@@ -72,8 +70,6 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
-							} else {
-								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
@@ -86,8 +82,6 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
-							} else {
-								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
@@ -100,8 +94,6 @@ void my_shell() {
 							printf("Child PID: %d\n", childid);
 							if (bg == NULL) {
 								waitpid(childid, &pstatus, 0);
-							} else {
-								printf("Executing in background\n");
 							}
 							status = 1;
 						} else {
@@ -234,7 +226,6 @@ char **get_args(char *line) {
 /*************************************************************************************
  * create: creates a file in the current directory
  * params: args - an array of strings representing arguments, where args[1] is the filename
- * returns: 0 on success, -1 on failure
  *************************************************************************************/
 
 void create(char **args) {
@@ -263,9 +254,7 @@ void create(char **args) {
 
 /*************************************************************************************
  * update: appends a specified number of lines to a file
- * params: args - an array of strings where args[1] is the filename, args[2] is the number of lines to write,
- *               and args[3] is the content to write
- * returns: 0 on success, -1 on failure
+ * params: args - an array of strings where args[1] is the filename, args[2] is the number of lines to write, and args[3] is the content to write
  *************************************************************************************/
 
 void update(char **args) {
@@ -307,8 +296,8 @@ void update(char **args) {
 /*************************************************************************************
  * list: reads and prints the contents of a file line by line
  * params: args - an array of strings where args[1] is the filename to read
- * returns: 0 on success, -1 on failure
  *************************************************************************************/
+
 void list(char **args) {
 	if (args[1] == NULL) {
 		fprintf(stderr, "Error: No file provided for list command\n");
@@ -345,7 +334,6 @@ void list(char **args) {
 
 /*************************************************************************************
  * dir: lists the contents of the current directory
- * returns: 0 on success, -1 on failure
  *************************************************************************************/
 
 void dir() {
