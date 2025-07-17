@@ -218,7 +218,7 @@ char **get_args(char *line) {
 
 		token = strtok(NULL, DELIMS);
 	}
-	tokens[position] = NULL; // null-terminate the array of tokens
+	tokens[position] = NULL;
 
 	return tokens;
 }
@@ -288,8 +288,7 @@ void update(char **args) {
 	}
 	fflush(fptr);
 	fclose(fptr);
-	fprintf(stdout, "\nUpdated %s. PID: %d\n", args[1], pid);
-	fflush(stdout); // Ensure the output is printed immediately
+	printf("\nUpdated %s. PID: %d\n", args[1], pid);
 	exit(EXIT_SUCCESS);
 }
 
